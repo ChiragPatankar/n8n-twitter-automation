@@ -1,0 +1,132 @@
+{
+  "name": "n8n-twitter-automation",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 9
+            },
+            {},
+            {
+              "hour": 18
+            },
+            {
+              "hour": 22
+            }
+          ]
+        }
+      },
+      "name": "Schedule",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f750205d-9b5d-4848-96a1-da593c6efe69"
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent\n",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "{\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Write a tweet (under 280 characters) about a RANDOM recent development in AI. Randomly choose from one of the following categories:\\n\\n1. A new AI model\\n2. A newly released AI tool\\n3. A trending research paper\\n4. A current ethical or legal debate\\n5. A major company announcement\\n\\nMake sure it's based on something from the last 7 days. Keep the language engaging and suitable for social media.\"\n        }\n      ]\n    }\n  ]\n}\n",
+        "headerParametersJson": "{\n  \"Content-Type\": \"application/json\"\n}\n",
+        "queryParametersJson": "{\n  \"key\": \"YOUR_GEMINI_API_KEY_HERE\"\n}\n\n"
+      },
+      "name": "Gemini API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        200,
+        0
+      ],
+      "id": "163fc4a3-b43f-40c9-a48d-7941769fc9b9"
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{\n  json: {\n    tweet: $json.candidates[0].content.parts[0].text.trim()\n  }\n}];\n"
+      },
+      "name": "Extract Tweet",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        400,
+        0
+      ],
+      "id": "89c5de88-3eb7-4d97-9cc1-ae0b5b921fbf"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=📝 New Tweet Idea:\n\n{{$node[\"Extract Tweet\"].json[\"tweet\"]}}\n",
+        "additionalFields": {}
+      },
+      "name": "Send to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        600,
+        0
+      ],
+      "id": "aa6276b6-c4d0-4e6a-bb57-0e186a24bd13",
+      "webhookId": "YOUR_WEBHOOK_ID",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule": {
+      "main": [
+        [
+          {
+            "node": "Gemini API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini API": {
+      "main": [
+        [
+          {
+            "node": "Extract Tweet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Tweet": {
+      "main": [
+        [
+          {
+            "node": "Send to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "MASKED_VERSION_ID",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "MASKED_INSTANCE_ID"
+  },
+  "id": "MASKED_WORKFLOW_ID",
+  "tags": []
+}
